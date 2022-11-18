@@ -11,6 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kkdai/youtube/v2"
+
+	progression "sqlite/test/internal"
 )
 
 // Represents a json like type, convenient to easy marshal any structure before serving it.
@@ -25,27 +27,6 @@ func (j JSON) toJson(w http.ResponseWriter) []byte {
 	return data
 }
 
-type Progress struct {
-	TotalSize int64
-	BytesRead int64
-}
-
-func (pr *Progress) Write(p []byte) (n int, err error) {
-	n, err = len(p), nil
-	pr.BytesRead += int64(n)
-	pr.Print()
-	return
-}
-
-func (pr *Progress) Print() {
-	if pr.BytesRead == pr.TotalSize {
-		fmt.Println("DONE!")
-		return
-	}
-
-	fmt.Printf("File upload in progress: %d\n", pr.BytesRead)
-}
-
 func TestVideo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -53,10 +34,17 @@ func TestVideo(w http.ResponseWriter, r *http.Request) {
 	video, err := client.GetVideo(id)
 	if err != nil {
 		log.Fatal(err)
+		return
+	}
+	formats := video.Formats.WithAudioChannels()
+
+	_, size, err := client.GetStream(video, &formats[2])
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	videoData := JSON{
-		"Duration": video.Duration.String(),
+		"size": size,
 	}
 
 	w.Write(videoData.toJson(w))
@@ -96,11 +84,15 @@ func DownloadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formats := video.Formats.WithAudioChannels()
-	stream, _, err := client.GetStream(video, &formats[2])
+	stream, size, err := client.GetStream(video, &formats[2])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	done := make(chan int64)
+
+	go progression.ProgressFile(done, fmt.Sprintf("./tmp/%d.mp4", uName), size)
 
 	file, err := os.Create(fmt.Sprintf("./tmp/%d.mp4", uName))
 	if err != nil {
@@ -109,11 +101,13 @@ func DownloadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, stream)
+	n, err := io.Copy(file, stream)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	done <- n
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\"test\"")
 	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
