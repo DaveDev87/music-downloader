@@ -90,16 +90,16 @@ func DownloadAudio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	done := make(chan int64)
-
-	go progression.ProgressFile(done, fmt.Sprintf("./tmp/%d.mp4", uName), size)
-
 	file, err := os.Create(fmt.Sprintf("./tmp/%d.mp4", uName))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
+
+	done := make(chan int64)
+
+	go progression.ProgressFile(done, fmt.Sprintf("./tmp/%d.mp4", uName), size)
 
 	n, err := io.Copy(file, stream)
 	if err != nil {
