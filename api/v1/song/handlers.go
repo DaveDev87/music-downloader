@@ -1,7 +1,6 @@
-package handlers
+package song
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,18 +13,6 @@ import (
 
 	progression "sqlite/test/internal"
 )
-
-// Represents a json like type, convenient to easy marshal any structure before serving it.
-type JSON map[string]interface{}
-
-// Marshals a givin type JSON into []bute.
-func (j JSON) toJson(w http.ResponseWriter) []byte {
-	data, err := json.Marshal(j)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return data
-}
 
 func TestVideo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

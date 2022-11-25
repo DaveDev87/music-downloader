@@ -1,11 +1,9 @@
-package router
+package song
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"sqlite/test/api/v1/handlers"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -15,16 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/olahol/melody"
 )
-
-type JSON map[string]interface{}
-
-func (j *JSON) toJson() []byte {
-	resp, err := json.Marshal(j)
-	if err != nil {
-		log.Fatal("Error while parsing json")
-	}
-	return resp
-}
 
 type GopherInfo struct {
 	ID, X, Y string
@@ -105,11 +93,11 @@ func Init() *chi.Mux {
 		resp := JSON{
 			"msg": "Hola mundo",
 		}
-		w.Write(resp.toJson())
+		w.Write(resp.toJson(w))
 	})
-	r.Get("/video/{id}", handlers.GetVideoData)
-	r.Post("/video/{id}", handlers.DownloadAudio)
-	r.Get("/test/{id}", handlers.TestVideo)
+	r.Get("/video/{id}", GetVideoData)
+	r.Post("/video/{id}", DownloadAudio)
+	r.Get("/test/{id}", TestVideo)
 	// #endregion
 
 	return r
