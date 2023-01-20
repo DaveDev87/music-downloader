@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kkdai/youtube/v2"
+	"github.com/olahol/melody"
 
 	progression "sqlite/test/internal"
 )
@@ -56,6 +57,16 @@ func GetVideoData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(videoData.toJson(w))
+}
+
+func DownloadWithProgression(m *melody.Melody) func(s *melody.Session, msg []byte) {
+	return func(s *melody.Session, msg []byte) {
+		fmt.Printf("Video id = %v", string(msg))
+		for i := 0; i <= 100; i++ {
+			s.Write([]byte(fmt.Sprintf("%v", i)))
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
 }
 
 func DownloadAudio(w http.ResponseWriter, r *http.Request) {

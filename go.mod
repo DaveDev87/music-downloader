@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/render v1.0.2
-	github.com/google/uuid v1.3.0
 	github.com/kkdai/youtube/v2 v2.7.16
 	github.com/olahol/melody v1.1.1
 )
